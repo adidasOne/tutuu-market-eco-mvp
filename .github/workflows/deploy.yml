@@ -3,8 +3,6 @@ name: Deploy MVP to cloud.ru
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
   deploy:

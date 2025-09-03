@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'express-morgan';
+import morgan from 'morgan';
 import catalogRoutes from './routes/catalog.routes';
 
 const app = express();
@@ -15,9 +15,9 @@ app.use(morgan('dev'));
 
 // Device ID middleware
 app.use((req, res, next) => {
-  const deviceId = req.headers['x-device-id'] as string || 'unknown';
-  req.headers['x-device-id'] = deviceId;
-  next();
+    const deviceId = req.headers['x-device-id'] as string || 'unknown';
+    req.headers['x-device-id'] = deviceId;
+    next();
 });
 
 // Routes
@@ -26,11 +26,11 @@ app.use('/catalog', catalogRoutes);
 // Health check endpoint
 app.get('/health', (req, res) => {
     const deviceId = req.headers['x-device-id'] as string || 'unknown';
-    res.json({ 
-        success: true, 
-        service: 'catalog-service', 
+    res.json({
+        success: true,
+        service: 'catalog-service',
         deviceId,
-        timestamp: new Date().toISOString() 
+        timestamp: new Date().toISOString()
     });
 });
 
@@ -56,7 +56,7 @@ app.get('/', (req, res) => {
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     const deviceId = req.headers['x-device-id'] as string || 'unknown';
     console.error('Error:', err);
-    
+
     res.status(500).json({
         success: false,
         message: 'Внутренняя ошибка сервера',

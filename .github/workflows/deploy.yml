@@ -1,4 +1,4 @@
-name: Deploy MVP to cloud.ru
+name: Deploy MVP to cloud.ru (no health-check)
 
 on:
   push:

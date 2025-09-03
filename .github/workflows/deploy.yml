@@ -34,9 +34,9 @@ jobs:
         run: |
           echo "🚀 Deploying to VM ${{ secrets.VM_IP }}..."
           
-          # Создание директории для деплоя
-          echo "📁 Creating deployment directory..."
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_IP }} "mkdir -p /opt/tutuu-market && echo 'Directory created'"
+          # Создание директории для деплоя с sudo
+          echo "📁 Creating deployment directory with sudo..."
+          ssh ${{ secrets.VM_USER }} /opt/tutuu-market && echo 'Directory created and ownership set'"
           
           # Копирование docker-compose файлов
           echo "📋 Copying docker-compose files..."

@@ -27,7 +27,7 @@ jobs:
           echo "🚀 Starting deployment to VM ${{ secrets.VM_IP }}..."
           
           # Create directory with sudo
-          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_IP }} "sudo mkdir -p /opt/tutuu-market && sudo chown ${{ secrets.VM_USER }}:${{ secrets.VM_IP }} /opt/tutuu-market"
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_IP }} "sudo mkdir -p /opt/tutuu-market && sudo chown ${{ secrets.VM_USER }}:${{ secrets.VM_USER }} /opt/tutuu-market"
           
           # Copy files
           echo "📁 Copying files to VM..."

@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Категории товаров
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  parentId    String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Отношения
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
+  
+  @@map("categories")
+}
+
+// Товары
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sku         String   @unique
+  barcode     String?
+  categoryId  String
+  brand       String?
+  model       String?
+  weight      Decimal? @db.Decimal(10, 3)
+  dimensions  Json?    // {length, width, height}
+  isActive    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Отношения
+  category    Category           @relation(fields: [categoryId], references: [id])
+  attributes  ProductAttribute[]
+  images      ProductImage[]
+  warehouses  WarehouseProduct[]
+  
+  @@map("products")
+}
+
+// Характеристики товаров
+model ProductAttribute {
+  id        String   @id @default(cuid())
+  productId String
+  name      String
+  value     String
+  unit      String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Отношения
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_attributes")
+}
+
+// Изображения товаров
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  alt       String?
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Отношения
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("product_images")
+}
+
+// Склады
+model Warehouse {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  address     String
+  city        String
+  region      String
+  country     String   @default("Россия")
+  postalCode  String?
+  phone       String?
+  email       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Отношения
+  products   WarehouseProduct[]
+  location   WarehouseLocation?
+  
+  @@map("warehouses")
+}
+
+// Геолокация складов
+model WarehouseLocation {
+  id          String   @id @default(cuid())
+  warehouseId String   @unique
+  latitude    Decimal  @db.Decimal(10, 8)
+  longitude   Decimal  @db.Decimal(11, 8)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Отношения
+  warehouse  Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  @@map("warehouse_locations")
+}
+
+// Остатки товаров по складам
+model WarehouseProduct {
+  id          String   @id @default(cuid())
+  warehouseId String
+  productId   String
+  quantity    Int      @default(0)
+  reserved    Int      @default(0)
+  available   Int      @default(0)
+  minStock    Int      @default(0)
+  maxStock    Int?
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  currency    String   @default("RUB")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Отношения
+  warehouse  Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([warehouseId, productId])
+  @@map("warehouse_products")
+}

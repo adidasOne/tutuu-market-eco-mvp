@@ -1,0 +1,160 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Заказы
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique
+  userId          String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  currency        String      @default("RUB")
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   PaymentMethod?
+  shippingAddress Json        // Адрес доставки
+  billingAddress  Json?       // Адрес для счета
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Отношения
+  items          OrderItem[]
+  payments       Payment[]
+  deliveries     Delivery[]
+  
+  @@map("orders")
+}
+
+// Позиции заказов
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  unitPrice Decimal @db.Decimal(10, 2)
+  totalPrice Decimal @db.Decimal(10, 2)
+  discount  Decimal @db.Decimal(10, 2) @default(0)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Отношения
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("order_items")
+}
+
+// Платежи
+model Payment {
+  id            String        @id @default(cuid())
+  orderId       String
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("RUB")
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  gateway       String?
+  gatewayData   Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Отношения
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+}
+
+// Доставки
+model Delivery {
+  id                String         @id @default(cuid())
+  orderId           String
+  carrierId         String?
+  status            DeliveryStatus @default(PENDING)
+  trackingNumber    String?
+  estimatedDelivery DateTime?
+  actualDelivery    DateTime?
+  shippingCost      Decimal        @db.Decimal(10, 2) @default(0)
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  // Отношения
+  order             Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("deliveries")
+}
+
+// Корзина покупок
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Отношения
+  items     CartItem[]
+  
+  @@map("carts")
+}
+
+// Позиции корзины
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Отношения
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, productId])
+  @@map("cart_items")
+}
+
+// Enums
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CARD
+  CASH
+  BANK_TRANSFER
+  ELECTRONIC_WALLET
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}

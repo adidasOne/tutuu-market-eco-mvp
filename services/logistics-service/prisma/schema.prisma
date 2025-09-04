@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Перевозчики
+model Carrier {
+  id            String        @id @default(cuid())
+  userId        String        @unique
+  companyName   String?
+  taxId         String?
+  licenseNumber String?
+  isActive      Boolean       @default(true)
+  isVerified    Boolean       @default(false)
+  rating        Decimal       @db.Decimal(3, 2) @default(0)
+  totalDeliveries Int         @default(0)
+  successfulDeliveries Int     @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Отношения
+  vehicles     Vehicle[]
+  deliveries   Delivery[]
+  offers       CarrierOffer[]
+  
+  @@map("carriers")
+}
+
+// Транспортные средства
+model Vehicle {
+  id            String        @id @default(cuid())
+  carrierId     String
+  type          VehicleType
+  model         String
+  licensePlate  String        @unique
+  capacity      Decimal       @db.Decimal(10, 2) // в тоннах
+  dimensions    Json?         // {length, width, height}
+  isAvailable   Boolean       @default(true)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  // Отношения
+  carrier       Carrier       @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  
+  @@map("vehicles")
+}
+
+// Доставки
+model Delivery {
+  id                String         @id @default(cuid())
+  orderId           String
+  carrierId         String?
+  status            DeliveryStatus @default(PENDING)
+  pickupAddress     Json           // Адрес забора
+  deliveryAddress   Json           // Адрес доставки
+  pickupDate        DateTime?
+  deliveryDate      DateTime?
+  estimatedDuration Int?           // в минутах
+  actualDuration    Int?
+  distance          Decimal?       @db.Decimal(10, 2) // в километрах
+  cost              Decimal        @db.Decimal(10, 2)
+  currency          String         @default("RUB")
+  trackingNumber    String?
+  notes             String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  // Отношения
+  carrier           Carrier?       @relation(fields: [carrierId], references: [id])
+  tracking          DeliveryTracking[]
+  offers            CarrierOffer[]
+  
+  @@map("deliveries")
+}
+
+// Трекинг доставок
+model DeliveryTracking {
+  id          String   @id @default(cuid())
+  deliveryId  String
+  status      DeliveryStatus
+  location    Json?    // {latitude, longitude, address}
+  timestamp   DateTime @default(now())
+  notes       String?
+  
+  // Отношения
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  
+  @@map("delivery_tracking")
+}
+
+// Предложения перевозчиков
+model CarrierOffer {
+  id          String   @id @default(cuid())
+  deliveryId  String
+  carrierId   String
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("RUB")
+  estimatedDelivery DateTime
+  notes       String?
+  isAccepted  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Отношения
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  carrier     Carrier  @relation(fields: [carrierId], references: [id], onDelete: Cascade)
+  
+  @@unique([deliveryId, carrierId])
+  @@map("carrier_offers")
+}
+
+// Enums
+enum VehicleType {
+  TRUCK
+  VAN
+  PICKUP
+  TRAILER
+  FLATBED
+  REFRIGERATED
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  CANCELLED
+}

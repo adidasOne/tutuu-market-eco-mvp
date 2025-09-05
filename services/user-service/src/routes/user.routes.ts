@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { authMiddleware, requireRole, AuthenticatedRequest } from '../middleware/auth.middleware';
+import { authMiddleware, requireRole, AuthenticatedRequest } from '../middleware/auth.middleware.js';
 import {
     CreateUserRequest,
     UpdateUserRequest,
     LoginRequest,
     UserRole
-} from '../types/user.types';
+} from '../types/user.types.js';
 
 const router = Router();
 

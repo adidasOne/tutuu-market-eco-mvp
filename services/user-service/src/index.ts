@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import userRoutes from './routes/user.routes';
+import userRoutes from './routes/user.routes.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
